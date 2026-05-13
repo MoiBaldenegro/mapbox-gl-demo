@@ -17,7 +17,7 @@ export default function RealTimeLocation() {
   const marker = useRef<mapboxgl.Marker | null>(null);
   const accuracyCircle = useRef<any>(null);
   const watchId = useRef<number | null>(null);
-  const remoteMarkersRef = useRef<Map<string, mapboxgl.Marker>>(new Map());
+  const remoteMarkersRef = useRef(new Map<string, mapboxgl.Marker>());
 
   const [location, setLocation] = useState<LocationData | null>(null);
   const [isTracking, setIsTracking] = useState(true);
