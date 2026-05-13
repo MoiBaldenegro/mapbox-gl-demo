@@ -207,14 +207,16 @@ export default function RealTimeLocation() {
 
   // Actualizar marcadores de usuarios remotos
   useEffect(() => {
-    if (!map.current || !remoteMarkersRef.current) return;
+    if (!map.current) return;
+
+    const markersMap = remoteMarkersRef.current;
 
     remoteLocations.forEach((remoteLocation) => {
       const markerId = remoteLocation.userId;
 
-      if (remoteMarkersRef.current!.has(markerId)) {
+      if (markersMap.has(markerId)) {
         // Actualizar marcador existente
-        const existingMarker = remoteMarkersRef.current!.get(markerId)!;
+        const existingMarker = markersMap.get(markerId)!;
         existingMarker.setLngLat([remoteLocation.longitude, remoteLocation.latitude]);
       } else {
         // Crear nuevo marcador para usuario remoto
@@ -232,15 +234,15 @@ export default function RealTimeLocation() {
           )
           .addTo(map.current);
 
-        remoteMarkersRef.current!.set(markerId, newMarker);
+        markersMap.set(markerId, newMarker);
       }
     });
 
     // Remover marcadores de usuarios que se desconectaron
-    remoteMarkersRef.current!.forEach((marker, markerId) => {
+    markersMap.forEach((marker, markerId) => {
       if (!remoteLocations.has(markerId)) {
         marker.remove();
-        remoteMarkersRef.current!.delete(markerId);
+        markersMap.delete(markerId);
       }
     });
   }, [remoteLocations]);
