@@ -1,0 +1,6 @@
+.mapContainer {
+        height: 100%;
+        min-height: 500px;
+        border-radius: 8px;
+        overflow: hidden;
+      }

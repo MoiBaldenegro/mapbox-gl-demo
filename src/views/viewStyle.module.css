@@ -1,0 +1,14 @@
+.container{
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    height: calc(100vh - 60px);
+}
+
+.floatingButton {
+    position: absolute;
+    bottom: 8px;
+    z-index: 9999;
+    margin: 0 8px;
+    width: calc(100% - 16px);
+}
