@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import styles from '../ui/maps/mapStyles.module.css';
+import { useLocationSync } from './useLocationSync';
 
 interface LocationData {
   latitude: number;
@@ -16,6 +17,7 @@ export default function RealTimeLocation() {
   const marker = useRef<mapboxgl.Marker | null>(null);
   const accuracyCircle = useRef<any>(null);
   const watchId = useRef<number | null>(null);
+  const remoteMarkersRef = useRef<Map<string, mapboxgl.Marker>>(new Map());
 
   const [location, setLocation] = useState<LocationData | null>(null);
   const [isTracking, setIsTracking] = useState(true);
@@ -23,6 +25,12 @@ export default function RealTimeLocation() {
   const [status, setStatus] = useState<string>('Inactivo');
 
   const accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
+  
+  // Sincronización de ubicaciones con el servidor
+  const { sendLocation, remoteLocations, isConnected } = useLocationSync({
+    username: `user_${Math.random().toString(36).substring(7)}`,
+    serverUrl: import.meta.env.VITE_SERVER_URL || 'http://localhost:3001',
+  });
 
   // Inicializar el mapa
   useEffect(() => {
@@ -84,6 +92,11 @@ export default function RealTimeLocation() {
         setLocation(newLocation);
         setStatus('Ubicación actualizada');
         setError(null);
+
+        // Enviar ubicación al servidor
+        if (isConnected) {
+          sendLocation(latitude, longitude, accuracy);
+        }
 
         // Actualizar el mapa
         if (map.current) {
@@ -191,6 +204,46 @@ export default function RealTimeLocation() {
       }
     };
   }, [isTracking]);
+
+  // Actualizar marcadores de usuarios remotos
+  useEffect(() => {
+    if (!map.current) return;
+
+    remoteLocations.forEach((remoteLocation) => {
+      const markerId = remoteLocation.userId;
+
+      if (remoteMarkersRef.current.has(markerId)) {
+        // Actualizar marcador existente
+        const existingMarker = remoteMarkersRef.current.get(markerId)!;
+        existingMarker.setLngLat([remoteLocation.longitude, remoteLocation.latitude]);
+      } else {
+        // Crear nuevo marcador para usuario remoto
+        const newMarker = new mapboxgl.Marker({ color: '#4CAF50' })
+          .setLngLat([remoteLocation.longitude, remoteLocation.latitude])
+          .setPopup(
+            new mapboxgl.Popup({ offset: 25 }).setHTML(
+              `<div style="font-family: Arial; font-size: 13px;">
+                <strong>👤 ${remoteLocation.username}</strong><br/>
+                Lat: ${remoteLocation.latitude.toFixed(6)}<br/>
+                Lng: ${remoteLocation.longitude.toFixed(6)}<br/>
+                ${remoteLocation.accuracy ? `Precisión: ${remoteLocation.accuracy.toFixed(0)}m` : ''}
+              </div>`
+            )
+          )
+          .addTo(map.current);
+
+        remoteMarkersRef.current.set(markerId, newMarker);
+      }
+    });
+
+    // Remover marcadores de usuarios que se desconectaron
+    remoteMarkersRef.current.forEach((marker, markerId) => {
+      if (!remoteLocations.has(markerId)) {
+        marker.remove();
+        remoteMarkersRef.current.delete(markerId);
+      }
+    });
+  }, [remoteLocations]);
 
   const toggleTracking = () => {
     setIsTracking(!isTracking);
