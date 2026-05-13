@@ -209,7 +209,7 @@ export default function RealTimeLocation() {
   useEffect(() => {
     if (!map.current) return;
 
-    const markersMap = remoteMarkersRef.current;
+    const markersMap = remoteMarkersRef.current as Map<string, mapboxgl.Marker>;
 
     remoteLocations.forEach((remoteLocation) => {
       const markerId = remoteLocation.userId;
