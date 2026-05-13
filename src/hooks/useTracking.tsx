@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import styles from '../ui/maps/mapStyles.module.css';
@@ -17,7 +17,7 @@ export default function RealTimeLocation() {
   const marker = useRef<mapboxgl.Marker | null>(null);
   const accuracyCircle = useRef<any>(null);
   const watchId = useRef<number | null>(null);
-  const remoteMarkersRef = useRef(new Map<string, mapboxgl.Marker>());
+  const remoteMarkersRef = useRef<Map<string, mapboxgl.Marker>>(new Map());
 
   const [location, setLocation] = useState<LocationData | null>(null);
   const [isTracking, setIsTracking] = useState(true);
@@ -209,7 +209,8 @@ export default function RealTimeLocation() {
   useEffect(() => {
     if (!map.current) return;
 
-    const markersMap = remoteMarkersRef.current as Map<string, mapboxgl.Marker>;
+    const markersMap = remoteMarkersRef.current;
+    if (!markersMap) return;
 
     remoteLocations.forEach((remoteLocation) => {
       const markerId = remoteLocation.userId;
