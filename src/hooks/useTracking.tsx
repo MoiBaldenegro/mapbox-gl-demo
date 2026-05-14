@@ -107,17 +107,12 @@ export default function RealTimeLocation() {
         // Enviar ubicación al servidor
         console.log('🗺️ watchPosition disparado - enviando ubicación:', { 
           latitude, 
-          longitude, 
-          isConnected,
+          longitude,
           sendLocation: typeof sendLocation 
         });
         
-        if (isConnected) {
-          console.log('✅ Conectado, llamando sendLocation');
-          sendLocation(latitude, longitude, accuracy);
-        } else {
-          console.log('⚠️ NO conectado, no se envía ubicación');
-        }
+        // Always call sendLocation - it handles socket connection check internally
+        sendLocation(latitude, longitude, accuracy);
 
         // Actualizar el mapa
         if (map.current) {

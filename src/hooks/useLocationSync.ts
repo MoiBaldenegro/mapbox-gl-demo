@@ -98,16 +98,18 @@ export function useLocationSync(options: UseLocationSyncOptions) {
 
   // Función para enviar ubicación
   const sendLocation = (latitude: number, longitude: number, accuracy?: number) => {
-    console.log('📤 Intentando enviar ubicación:', { latitude, longitude, accuracy, isConnected });
     if (socketRef.current?.connected) {
-      console.log('📤📤 ENVIANDO ubicación al servidor');
+      console.log('📤📤 ENVIANDO ubicación al servidor:', { latitude, longitude, accuracy });
       socketRef.current.emit('location_update', {
         latitude,
         longitude,
         accuracy,
       });
     } else {
-      console.log('⚠️ Socket no conectado, no se puede enviar ubicación');
+      console.log('⚠️ Socket no conectado, no se puede enviar ubicación. Socket status:', {
+        exists: !!socketRef.current,
+        connected: socketRef.current?.connected
+      });
     }
   };
 
