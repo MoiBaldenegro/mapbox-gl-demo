@@ -47,6 +47,16 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
+// Health check para Prisma
+app.get('/api/health/db', async (req, res) => {
+  try {
+    const result = await prisma.$queryRaw`SELECT 1`;
+    res.json({ status: 'ok', database: 'connected' });
+  } catch (error) {
+    res.status(500).json({ status: 'error', database: 'disconnected', error: String(error) });
+  }
+});
+
 // Obtener ubicaciones recientes de todos los usuarios
 app.get('/api/locations', async (req, res) => {
   try {
@@ -81,6 +91,8 @@ io.on('connection', (socket) => {
   // Cuando un usuario se registra
   socket.on('user_register', async (userData) => {
     try {
+      console.log(`Attempting to register user: ${userData.username}`);
+      
       const user = await prisma.user.upsert({
         where: { username: userData.username },
         update: {},
@@ -97,9 +109,10 @@ io.on('connection', (socket) => {
       });
       
       console.log(`✓ Usuario registrado: ${user.username}`);
+      socket.emit('user_registered', { success: true, userId: user.id });
     } catch (error) {
       console.error('Error registering user:', error);
-      socket.emit('error', 'Error registering user');
+      socket.emit('error', `Error registering user: ${error instanceof Error ? error.message : String(error)}`);
     }
   });
 
