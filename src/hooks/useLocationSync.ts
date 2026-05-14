@@ -17,6 +17,8 @@ interface UseLocationSyncOptions {
 
 export function useLocationSync(options: UseLocationSyncOptions) {
   const { username, serverUrl = 'http://localhost:3001' } = options;
+  console.log('🔧 useLocationSync inicializado con:', { username, serverUrl });
+  
   const socketRef = useRef<Socket | null>(null);
   const [remoteLocations, setRemoteLocations] = useState<Map<string, RemoteLocation>>(
     new Map()
@@ -37,7 +39,7 @@ export function useLocationSync(options: UseLocationSyncOptions) {
 
     // Debug: Conexión establecida
     socket.on('connect', () => {
-      console.log('✅ Socket.IO conectado:', socket.id);
+      console.log('✅✅✅ SOCKET.IO CONECTADO:', socket.id);
       setIsConnected(true);
       // Registrar el usuario cuando se conecta
       socket.emit('user_register', { username });
@@ -96,12 +98,16 @@ export function useLocationSync(options: UseLocationSyncOptions) {
 
   // Función para enviar ubicación
   const sendLocation = (latitude: number, longitude: number, accuracy?: number) => {
+    console.log('📤 Intentando enviar ubicación:', { latitude, longitude, accuracy, isConnected });
     if (socketRef.current?.connected) {
+      console.log('📤📤 ENVIANDO ubicación al servidor');
       socketRef.current.emit('location_update', {
         latitude,
         longitude,
         accuracy,
       });
+    } else {
+      console.log('⚠️ Socket no conectado, no se puede enviar ubicación');
     }
   };
 

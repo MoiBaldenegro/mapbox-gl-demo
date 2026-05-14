@@ -25,11 +25,17 @@ export default function RealTimeLocation() {
   const [status, setStatus] = useState<string>('Inactivo');
 
   const accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
+  const serverUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:3001';
+  
+  console.log('📍 useTracking - Env vars:', {
+    VITE_MAPBOX_TOKEN: accessToken ? '✓ presente' : '✗ falta',
+    VITE_SERVER_URL: serverUrl,
+  });
   
   // Sincronización de ubicaciones con el servidor
   const { sendLocation, remoteLocations, isConnected } = useLocationSync({
     username: `user_${Math.random().toString(36).substring(7)}`,
-    serverUrl: import.meta.env.VITE_SERVER_URL || 'http://localhost:3001',
+    serverUrl: serverUrl,
   });
 
   // Inicializar el mapa
@@ -99,8 +105,18 @@ export default function RealTimeLocation() {
         setError(null);
 
         // Enviar ubicación al servidor
+        console.log('🗺️ watchPosition disparado - enviando ubicación:', { 
+          latitude, 
+          longitude, 
+          isConnected,
+          sendLocation: typeof sendLocation 
+        });
+        
         if (isConnected) {
+          console.log('✅ Conectado, llamando sendLocation');
           sendLocation(latitude, longitude, accuracy);
+        } else {
+          console.log('⚠️ NO conectado, no se envía ubicación');
         }
 
         // Actualizar el mapa
