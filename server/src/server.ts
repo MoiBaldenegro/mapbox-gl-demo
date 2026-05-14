@@ -9,10 +9,30 @@ dotenv.config();
 
 const app = express();
 const server = createServer(app);
+
+// CORS configuration for Socket.IO
+const corsOrigin = process.env.FRONTEND_URL || 'https://mapbox-gl-demo.vercel.app';
 const io = new SocketIOServer(server, {
   cors: {
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    origin: (origin, callback) => {
+      // Allow multiple origins
+      const allowedOrigins = [
+        'https://mapbox-gl-demo.vercel.app',
+        'https://mapbox-gl-demo.vercel.app/',
+        corsOrigin,
+        corsOrigin + '/',
+        'http://localhost:5173',
+        'http://localhost:3000',
+      ];
+      
+      if (!origin || allowedOrigins.some(allowed => origin.includes(allowed.replace(/\/$/, '')))) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     methods: ['GET', 'POST'],
+    credentials: true,
   },
 });
 
