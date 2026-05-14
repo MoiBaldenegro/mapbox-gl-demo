@@ -22,6 +22,7 @@ export function useLocationSync(options: UseLocationSyncOptions) {
     new Map()
   );
   const [connectedUsers, setConnectedUsers] = useState<Set<string>>(new Set());
+  const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
     // Conectar al servidor
@@ -34,16 +35,33 @@ export function useLocationSync(options: UseLocationSyncOptions) {
 
     socketRef.current = socket;
 
-    // Registrar el usuario
-    socket.emit('user_register', { username });
+    // Debug: Conexión establecida
+    socket.on('connect', () => {
+      console.log('✅ Socket.IO conectado:', socket.id);
+      setIsConnected(true);
+      // Registrar el usuario cuando se conecta
+      socket.emit('user_register', { username });
+    });
+
+    socket.on('disconnect', () => {
+      console.log('❌ Socket.IO desconectado');
+      setIsConnected(false);
+    });
+
+    // Escuchar confirmación de registro
+    socket.on('user_registered', (data) => {
+      console.log('✓ Usuario registrado:', data);
+    });
 
     // Escuchar cuando otro usuario se conecta
     socket.on('user_joined', (userData) => {
+      console.log('👤 Usuario conectado:', userData.username);
       setConnectedUsers((prev) => new Set([...prev, userData.userId]));
     });
 
     // Escuchar actualizaciones de ubicación
     socket.on('location_updated', (locationData) => {
+      console.log('📍 Ubicación recibida de:', locationData.username, locationData);
       setRemoteLocations((prev) => {
         const newMap = new Map(prev);
         newMap.set(locationData.userId, locationData);
@@ -53,6 +71,7 @@ export function useLocationSync(options: UseLocationSyncOptions) {
 
     // Escuchar cuando un usuario se desconecta
     socket.on('user_left', (userData) => {
+      console.log('👋 Usuario desconectado:', userData.username);
       setRemoteLocations((prev) => {
         const newMap = new Map(prev);
         newMap.delete(userData.userId);
@@ -67,7 +86,7 @@ export function useLocationSync(options: UseLocationSyncOptions) {
 
     // Manejar errores
     socket.on('error', (error) => {
-      console.error('Socket error:', error);
+      console.error('❌ Socket error:', error);
     });
 
     return () => {
@@ -90,6 +109,6 @@ export function useLocationSync(options: UseLocationSyncOptions) {
     sendLocation,
     remoteLocations,
     connectedUsers,
-    isConnected: socketRef.current?.connected || false,
+    isConnected,
   };
 }
