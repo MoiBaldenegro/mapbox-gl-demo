@@ -17,9 +17,7 @@ export default function RealTimeLocation() {
   const marker = useRef<mapboxgl.Marker | null>(null);
   const accuracyCircle = useRef<any>(null);
   const watchId = useRef<number | null>(null);
-  
-  // Simple object to store remote markers - updated via ref
-  const remoteMarkers = useMemo(() => new Map<string, mapboxgl.Marker>(), []);
+  const remoteMarkers = useRef<Map<string, mapboxgl.Marker> | null>(null);
 
   const [location, setLocation] = useState<LocationData | null>(null);
   const [isTracking, setIsTracking] = useState(true);
@@ -37,6 +35,11 @@ export default function RealTimeLocation() {
   // Inicializar el mapa
   useEffect(() => {
     if (!mapContainer.current) return;
+
+    // Inicializar remoteMarkers si no existe
+    if (!remoteMarkers.current) {
+      remoteMarkers.current = new Map();
+    }
 
     mapboxgl.accessToken = accessToken;
 
@@ -209,16 +212,20 @@ export default function RealTimeLocation() {
 
   // Actualizar marcadores de usuarios remotos
   useEffect(() => {
-    if (!map.current) return;
-    // TODO: Remote markers - will be re-implemented with proper typing
-    /*
-    remoteLocations.forEach((remoteLocation) => {
+    if (!map.current || !remoteMarkers.current) return;
+
+    const m = remoteMarkers.current as Map<string, mapboxgl.Marker>;
+    
+    // Actualizar marcadores existentes y crear nuevos
+    for (const [, remoteLocation] of remoteLocations) {
       const markerId = remoteLocation.userId;
 
-      if (remoteMarkers.has(markerId)) {
-        const existingMarker = remoteMarkers.get(markerId)!;
+      if (m.has(markerId)) {
+        // Actualizar marcador existente
+        const existingMarker = m.get(markerId)!;
         existingMarker.setLngLat([remoteLocation.longitude, remoteLocation.latitude]);
       } else {
+        // Crear nuevo marcador para usuario remoto
         const newMarker = new mapboxgl.Marker({ color: '#4CAF50' })
           .setLngLat([remoteLocation.longitude, remoteLocation.latitude])
           .setPopup(
@@ -233,18 +240,18 @@ export default function RealTimeLocation() {
           )
           .addTo(map.current);
 
-        remoteMarkers.set(markerId, newMarker);
+        m.set(markerId, newMarker);
       }
-    });
+    }
 
-    remoteMarkers.forEach((marker, markerId) => {
+    // Remover marcadores de usuarios que se desconectaron
+    for (const [markerId, marker] of m) {
       if (!remoteLocations.has(markerId)) {
         marker.remove();
-        remoteMarkers.delete(markerId);
+        m.delete(markerId);
       }
-    });
-    */
-  }, [remoteLocations, remoteMarkers]);
+    }
+  }, [remoteLocations]);
 
   const toggleTracking = () => {
     setIsTracking(!isTracking);
